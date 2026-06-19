@@ -22,27 +22,25 @@ vec3 reconstructViewPos(vec2 uv, float depth) {
     return view.xyz / view.w;
 }
 
+vec3 reconstructSkyDir(vec2 uv) {
+    vec4 clip = vec4(uv * 2.0 - 1.0, 1.0, 1.0);
+    vec4 view = gbufferProjectionInverse * clip;
+    return normalize(view.xyz);
+}
+
 void main() {
     vec2 uv = v_TexCoord;
     float depth = texture(depthtex0, uv).r;
 
     // Sky handling: procedural sky (Iris clears colortex0 before gbuffers)
     if (depth >= 1.0) {
-        vec3 viewDir = normalize(reconstructViewPos(uv, 1.0));
+        vec3 viewDir = reconstructSkyDir(uv);
         vec3 sky = getSkyColor(viewDir);
 
         sky = applyProceduralClouds(sky, viewDir);
         sky += getSunSkyAdd(viewDir);
         sky += getMoonSkyAdd(viewDir);
         sky += getStarField(viewDir);
-
-        // Blend with vanilla clouds if present.
-        // Iris renders clouds into colortex0 before this composite pass.
-        // Cloud pixels have non-zero alpha; sky pixels have alpha=0.
-        vec4 cloudSample = texture(colortex0, uv);
-        if (cloudSample.a > 0.01) {
-            sky = mix(sky, cloudSample.rgb, cloudSample.a);
-        }
 
         outColor  = vec4(sky, 1.0);
         outSSAO   = vec4(1.0);
@@ -65,7 +63,7 @@ void main() {
     float emissive   = matSample.a;
 
     vec3 viewPos = reconstructViewPos(uv, depth);
-    vec3 worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz + cameraPosition;
+    vec3 worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
     vec3 V = normalize(-viewPos);
 
     // SSAO
@@ -75,7 +73,7 @@ void main() {
 
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
     vec3 lit = shadeSurface(albedo, Nview, V, worldPos, materialRoughness, metallic, ao, torchLight, skyLight, matId);
-    lit *= aoMult;
+    lit *= mix(1.0, aoMult, 0.45);
 
     // Emissive materials (lava, glowstone, custom emissive blocks)
     if (emissive > 0.01 || matId == MAT_LAVA || matId == MAT_EMISSIVE) {

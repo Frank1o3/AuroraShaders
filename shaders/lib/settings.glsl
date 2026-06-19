@@ -10,7 +10,7 @@
 #endif
 
 #ifndef shadowMapResolution
-#define shadowMapResolution 2048 // [512 1024 2048 4096] Shadow map resolution
+#define shadowMapResolution 1024 // [512 1024 2048 4096] Shadow map resolution
 #endif
 
 #ifndef fogDensity
@@ -159,8 +159,8 @@
 #endif
 
 #if qualityLevel >= 2
-  #define SHADOW_SAMPLES 8
-  #define SSAO_SAMPLES   8
+  #define SHADOW_SAMPLES 4
+  #define SSAO_SAMPLES   4
 #elif qualityLevel >= 1
   #define SHADOW_SAMPLES 4
   #define SSAO_SAMPLES   4

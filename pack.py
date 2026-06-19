@@ -5,7 +5,7 @@ import zipfile
 
 SHADERS_DIR = "shaders"
 README_FILE = "README.md"
-OUTPUT_ZIP = "AuroraShades.zip"
+OUTPUT_ZIP = "AuroraShaders.zip"
 
 def zip_shader_pack():
     with zipfile.ZipFile(OUTPUT_ZIP, 'w', zipfile.ZIP_DEFLATED) as zipf:

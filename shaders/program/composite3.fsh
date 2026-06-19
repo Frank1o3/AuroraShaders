@@ -37,10 +37,10 @@ vec3 screenSpaceGodRays(vec2 uv, vec2 sunScreenPos) {
     return color;
 }
 
-// Project a world-space direction to screen UV
+// Project a view-space direction to screen UV
 vec2 projectDirectionToScreen(vec3 dir) {
-    vec4 view = gbufferModelView * vec4(dir * 1000.0, 1.0);
-    vec4 clip = gbufferProjection * view;
+    vec4 clip = gbufferProjection * vec4(normalize(dir) * 1000.0, 1.0);
+    if (clip.w <= EPSILON) return vec2(-2.0);
     vec3 ndc = clip.xyz / clip.w;
     return ndc.xy * 0.5 + 0.5;
 }

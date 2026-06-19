@@ -6,7 +6,6 @@
 // =====================================================================
 
 #include "../lib/common.glsl"
-#include "../lib/lighting.glsl"
 
 layout (location = 0) out vec4 outAlbedo;     // colortex0
 layout (location = 1) out vec4 outNormal;     // colortex1

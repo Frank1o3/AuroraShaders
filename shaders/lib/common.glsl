@@ -118,6 +118,7 @@ float interleavedGradientNoise(vec2 px) {
 // stage to include tonemap.glsl.
 // ---------------------------------------------------------------------
 vec3 linearToSRGB(vec3 c) {
+    c = max(c, vec3(0.0));
     return mix(c * 12.92, pow(c, vec3(1.0 / 2.4)) * 1.055 - 0.055,
                step(0.0031308, c));
 }

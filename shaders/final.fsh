@@ -40,9 +40,11 @@ void main() {
 
     // 4) Color grade (subtle — just a touch of saturation & contrast)
     tonemapped = colorGrade(tonemapped, SATURATION, CONTRAST, 1.0);
+    tonemapped = clamp01(tonemapped);
 
     // 5) Subtle vignette
     tonemapped = applyVignette(tonemapped, uv);
+    tonemapped = clamp01(tonemapped);
 
     // 6) Encode to sRGB for display
     vec3 srgb = linearToSRGB(tonemapped);

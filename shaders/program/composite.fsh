@@ -27,10 +27,15 @@ vec3 reconstructViewPos(vec2 uv, float depth) {
     return view.xyz / view.w;
 }
 
-vec3 reconstructWorldPos(vec2 uv, float depth) {
+vec3 reconstructScenePos(vec2 uv, float depth) {
     vec3 viewPos = reconstructViewPos(uv, depth);
-    vec4 worldPos = gbufferModelViewInverse * vec4(viewPos, 1.0);
-    return worldPos.xyz + cameraPosition;
+    return (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
+}
+
+vec3 reconstructSkyDir(vec2 uv) {
+    vec4 clip = vec4(uv * 2.0 - 1.0, 1.0, 1.0);
+    vec4 view = gbufferProjectionInverse * clip;
+    return normalize(view.xyz);
 }
 
 void main() {
@@ -41,7 +46,7 @@ void main() {
 
     if (isSky) {
         // Sky color for background
-        vec3 viewDir = normalize(reconstructViewPos(uv, 1.0));
+        vec3 viewDir = reconstructSkyDir(uv);
         vec3 sky = getSkyColor(viewDir);
 
         sky = applyProceduralClouds(sky, viewDir);
@@ -70,7 +75,7 @@ void main() {
 
     // Reconstruct positions
     vec3 viewPos  = reconstructViewPos(uv, depth);
-    vec3 worldPos = reconstructWorldPos(uv, depth);
+    vec3 worldPos = reconstructScenePos(uv, depth);
     vec3 V = normalize(-viewPos);
 
     // SSAO
@@ -84,8 +89,8 @@ void main() {
                             materialRoughness, metallic, ao,
                             torchLight, skyLight, matId);
 
-    // Apply vanilla AO baked into vertex colors (subtle)
-    lit *= aoMult;
+    // Keep AO local so skylight remains the dominant outdoor illumination.
+    lit *= mix(1.0, aoMult, 0.45);
 
     // Emissive boost
     if (emissive > 0.01) {

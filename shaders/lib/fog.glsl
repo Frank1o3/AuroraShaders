@@ -52,7 +52,7 @@ vec3 applyDistanceFog(vec3 color, vec3 viewPos, vec3 viewDir) {
 // Skipped underwater — the distance fog already handles that case.
 vec3 applyHorizonHaze(vec3 color, vec3 viewDir, vec3 viewPos) {
     if (isEyeInWater != 0) return color;
-    float upDot = viewDir.y;
+    float upDot = dot(normalize(viewDir), normalize(upPosition));
     float h = 1.0 - clamp01(upDot);
     float h2 = h * h;
     float horizonMask = h2 * h2 * h2;

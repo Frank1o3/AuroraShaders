@@ -17,7 +17,7 @@
 vec3 skyColorDayTop    = vec3(0.20, 0.45, 0.95);
 vec3 skyColorDayHoriz  = vec3(0.55, 0.75, 1.00);
 vec3 skyColorSunset    = vec3(1.00, 0.55, 0.30);
-vec3 skyColorNight     = vec3(0.012, 0.020, 0.045);
+vec3 skyColorNight     = vec3(0.030, 0.040, 0.085);
 
 float fastPow01(float x, float p) {
     return exp2(log2(max(clamp01(x), EPSILON)) * p);
@@ -35,7 +35,7 @@ vec3 getSkyColor(vec3 dir) {
     float day = horizonDayFactor();
 
     vec3 dayCol = mix(skyColorDayHoriz, skyColorDayTop, fastPow01(upDot, 0.6));
-    vec3 nightCol = skyColorNight;
+    vec3 nightCol = skyColorNight * (0.75 + moonIntensity * 0.85);
 
     float sunHeight = dot(sunDir, upDir);
     float sunsetMask = smoothstep(-0.08, 0.12, sunHeight) * (1.0 - smoothstep(0.18, 0.55, sunHeight));
@@ -112,20 +112,28 @@ vec3 getActiveLightColor() {
     return getSunLightColor() + getMoonLightColor();
 }
 
+vec3 getSkyAmbientColor(float day) {
+    vec3 dayAmbient = vec3(0.58, 0.68, 0.82) * sunIntensity;
+    vec3 nightAmbient = vec3(0.060, 0.075, 0.120) * (0.75 + moonIntensity);
+    return mix(nightAmbient, dayAmbient, day);
+}
+
 // ---------------------------------------------------------------------
 // Atmospheric sky contribution as an ambient fill (Hemispheric)
 // ---------------------------------------------------------------------
-vec3 ambientHemisphere(vec3 N, vec3 viewDir, float skyLight, float ao) {
+vec3 ambientHemisphere(vec3 N, float skyLight, float ao, float day) {
     vec3 upDir = normalize(upPosition);
-    float upDot = clamp01(dot(N, upDir) * 0.5 + 0.5);
+    float upDot = dot(N, upDir) * 0.5 + 0.5;
     float skyVis = clamp01(skyLight);
-    vec3 sky = getSkyColor(upDir) * (0.35 + 0.65 * skyVis);
-    vec3 ground = vec3(0.16, 0.14, 0.12) * (0.65 + 0.35 * skyVis);
-    vec3 ambient = mix(ground, sky, upDot);
 
-    float facingSky = clamp01(dot(normalize(viewDir + upDir), upDir));
-    ambient = mix(ambient, ambient * 0.88 + getSkyColor(upDir) * 0.12, facingSky * 0.25);
-    return max(ambient * max(ambientStrength, 0.2) * ao, vec3(0.0));
+    vec3 sky = getSkyAmbientColor(day);
+    vec3 ground = mix(vec3(0.038, 0.040, 0.052), vec3(0.24, 0.22, 0.18), day);
+    float skyAccess = mix(0.34, 1.0, skyVis);
+    float hemi = mix(0.82, 1.14, clamp01(upDot));
+    float aoTerm = mix(1.0, clamp01(ao), 0.55);
+
+    vec3 ambient = mix(ground, sky, 0.78) * skyAccess * hemi;
+    return max(ambient * max(ambientStrength, 0.18) * aoTerm, vec3(0.0));
 }
 
 // ---------------------------------------------------------------------
@@ -141,7 +149,8 @@ vec3 computeDirectLighting(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
     float shadow = getShadowFactor(worldPos, N);
     vec3 lightColor = getActiveLightColor();
 
-    vec3 diffuse = albedo * lightColor * NdotL * shadow;
+    float sunShape = NdotL * shadow;
+    vec3 diffuse = albedo * lightColor * sunShape * 0.26;
     vec3 spec = vec3(0.0);
 
 #if ENABLE_SPECULAR == 1
@@ -151,7 +160,7 @@ vec3 computeDirectLighting(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
         float fresnel = fastPow01(1.0 - NdotV, 5.0);
         float gloss = mix(32.0, 8.0, clamp01(materialRoughness));
         float specTerm = fastPow01(NdotH, gloss) * (0.04 + fresnel);
-        spec = lightColor * specTerm * specularStrength * shadow * (1.0 - materialRoughness * 0.45);
+        spec = lightColor * specTerm * specularStrength * shadow * (1.0 - materialRoughness * 0.45) * 0.55;
     }
 #endif
 
@@ -193,11 +202,13 @@ vec3 shadeSurface(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
     float torch01 = clamp01(torchLight);
     vec3 blockLight = blockLightColor(torch01) * albedo * (0.65 + torch01 * 2.0);
 
-    vec3 ambient = albedo * ambientHemisphere(N, V, skyLight, ao);
-    ambient = max(ambient, albedo * vec3(0.2) * ambientStrength * ao);
-    vec3 skyFill = getSkyColor(normalize(upPosition)) * clamp01(skyLight) * 0.18 * albedo * ao;
+    float day = horizonDayFactor();
+    float sky01 = clamp01(skyLight);
+    vec3 ambient = albedo * ambientHemisphere(N, sky01, ao, day);
+    vec3 minAmbient = mix(vec3(0.050, 0.060, 0.090), vec3(0.34, 0.38, 0.42), day);
+    ambient = max(ambient, albedo * minAmbient * (0.30 + 0.70 * sky01));
 
-    vec3 color = max(ambient + direct + blockLight + skyFill, vec3(0.0));
+    vec3 color = max(ambient + direct + blockLight, vec3(0.0));
 
     // Foliage gets a touch of SSS for that "translucent leaves" look
     if (matId == MAT_LEAVES || matId == MAT_GRASS || matId == MAT_FOLIAGE) {

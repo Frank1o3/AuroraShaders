@@ -22,8 +22,14 @@ const float weights[5] = float[5](
 float luminanceSample(vec2 uv, float weight) {
     vec3 c = texture(colortex0, uv).rgb;
     float d = texture(depthtex0, uv).r;
-    float skyWeight = (d >= 1.0) ? 0.18 : 1.0;
-    return luminance(c) * weight * skyWeight;
+    bool isSky = d >= 1.0;
+    float lum = luminance(c);
+
+    // Hot pixels should bloom, not drive eye adaptation. Compress each
+    // probe before averaging so looking at the sun/torch keeps exposure stable.
+    lum = min(lum, isSky ? 1.0 : 1.4);
+    float skyWeight = isSky ? 0.05 : 1.0;
+    return lum * weight * skyWeight;
 }
 
 float stableSceneLuminance() {
