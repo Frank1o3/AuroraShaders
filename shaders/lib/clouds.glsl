@@ -33,27 +33,38 @@ float cloudFbm(vec2 p) {
     return n;
 }
 
+float cloudDetail(vec2 p) {
+    return cloudValueNoise(p * 8.0 + 41.0) * 0.55 + cloudValueNoise(p * 15.0 - 9.0) * 0.45;
+}
+
 vec3 applyProceduralClouds(vec3 sky, vec3 viewDir) {
 #if ENABLE_CLOUDS == 0
     return sky;
 #else
-    if (viewDir.y <= 0.02 || cloudDensity <= 0.001) return sky;
+    vec3 upDir = normalize(upPosition);
+    float upDot = dot(normalize(viewDir), upDir);
+    if (upDot <= 0.02 || cloudDensity <= 0.001) return sky;
 
-    float plane = 0.55 / max(viewDir.y, 0.04);
+    float plane = cloudHeight / max(upDot, 0.04);
     vec2 wind = vec2(frameTimeCounter * cloudSpeed * 0.018, frameTimeCounter * cloudSpeed * 0.006);
     vec2 uv = viewDir.xz * plane * 0.85 + wind + cameraPosition.xz * 0.00025;
 
     float coverage = mix(0.78, 0.36, clamp01(cloudDensity));
-    float shape = cloudFbm(uv * 3.2);
-    float alpha = smoothstep(coverage, coverage + 0.20, shape);
-    alpha *= smoothstep(0.02, 0.28, viewDir.y);
+    float base = cloudFbm(uv * 3.2);
+    float detail = cloudDetail(uv * 3.2);
+    float shape = base * 0.82 + detail * 0.18;
+    float alpha = smoothstep(coverage, coverage + 0.18, shape);
+    alpha *= 1.0 - smoothstep(coverage + 0.18, coverage + 0.42, detail) * 0.35;
+    alpha *= smoothstep(0.02, 0.28, upDot);
     alpha *= 1.0 - rainStrength * 0.35;
 
     vec3 sunDir = normalize(sunPosition);
-    float sunLit = clamp01(dot(normalize(vec3(viewDir.x, 0.35, viewDir.z)), sunDir) * 0.5 + 0.5);
-    vec3 cloudDay = mix(vec3(0.62, 0.66, 0.72), vec3(1.0, 0.96, 0.88), sunLit) * sunIntensity;
+    float sunLit = clamp01(dot(normalize(viewDir + upDir * 0.35), sunDir) * 0.5 + 0.5);
+    float silver = fastPow01(clamp01(dot(normalize(viewDir), sunDir)), 12.0);
+    vec3 cloudDay = mix(vec3(0.58, 0.62, 0.68), vec3(1.0, 0.96, 0.88), sunLit) * sunIntensity;
+    cloudDay += getSunLightColor() * silver * 0.35;
     vec3 cloudNight = vec3(0.055, 0.065, 0.09) * (0.6 + moonIntensity);
-    vec3 cloudColor = mix(cloudNight, cloudDay, daylightFactor());
+    vec3 cloudColor = mix(cloudNight, cloudDay, horizonDayFactor());
 
     return mix(sky, cloudColor, alpha * 0.72);
 #endif

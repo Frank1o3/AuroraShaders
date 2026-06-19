@@ -66,7 +66,9 @@ vec3 colorGrade(vec3 color, float saturation, float contrast, float brightness) 
 // ---------------------------------------------------------------------
 float computeAdaptedExposure(float sceneLuminance, float previousExposure, float dt) {
     float targetExposure = 1.0 / (max(sceneLuminance, 0.0) + 0.1);
-    targetExposure = clamp(targetExposure, 0.08, 3.5);
+    float dayBaseline = mix(1.55, 0.82, daylightFactor());
+    targetExposure = mix(dayBaseline, targetExposure, 0.45);
+    targetExposure = clamp(targetExposure, exposureMin, exposureMax);
     float rate = clamp01(0.05 * EXPOSURE_ADAPT_SPEED);
     return mix(previousExposure, targetExposure, rate);
 }

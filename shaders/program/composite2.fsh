@@ -19,19 +19,39 @@ const float weights[5] = float[5](
     0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216
 );
 
-float stableSceneLuminance() {
-    vec2 p0 = vec2(0.50, 0.50);
-    vec2 p1 = vec2(0.25, 0.35);
-    vec2 p2 = vec2(0.75, 0.35);
-    vec2 p3 = vec2(0.35, 0.70);
-    vec2 p4 = vec2(0.65, 0.70);
+float luminanceSample(vec2 uv, float weight) {
+    vec3 c = texture(colortex0, uv).rgb;
+    float d = texture(depthtex0, uv).r;
+    float skyWeight = (d >= 1.0) ? 0.18 : 1.0;
+    return luminance(c) * weight * skyWeight;
+}
 
-    float l0 = luminance(texture(colortex0, p0).rgb);
-    float l1 = luminance(texture(colortex0, p1).rgb);
-    float l2 = luminance(texture(colortex0, p2).rgb);
-    float l3 = luminance(texture(colortex0, p3).rgb);
-    float l4 = luminance(texture(colortex0, p4).rgb);
-    return max((l0 + l1 + l2 + l3 + l4) * 0.2, 0.0);
+float stableSceneLuminance() {
+    float total = 0.0;
+    float weight = 0.0;
+
+    vec2 p0 = vec2(0.50, 0.50);
+    vec2 p1 = vec2(0.38, 0.42);
+    vec2 p2 = vec2(0.62, 0.42);
+    vec2 p3 = vec2(0.42, 0.58);
+    vec2 p4 = vec2(0.58, 0.58);
+    vec2 p5 = vec2(0.30, 0.50);
+    vec2 p6 = vec2(0.70, 0.50);
+    vec2 p7 = vec2(0.50, 0.30);
+    vec2 p8 = vec2(0.50, 0.70);
+
+    total += luminanceSample(p0, 2.0); weight += 2.0;
+    total += luminanceSample(p1, 1.0); weight += 1.0;
+    total += luminanceSample(p2, 1.0); weight += 1.0;
+    total += luminanceSample(p3, 1.0); weight += 1.0;
+    total += luminanceSample(p4, 1.0); weight += 1.0;
+    total += luminanceSample(p5, 0.6); weight += 0.6;
+    total += luminanceSample(p6, 0.6); weight += 0.6;
+    total += luminanceSample(p7, 0.6); weight += 0.6;
+    total += luminanceSample(p8, 0.6); weight += 0.6;
+
+    float avg = max(total / max(weight, 0.001), 0.0);
+    return clamp(avg, 0.02, 8.0);
 }
 
 void main() {

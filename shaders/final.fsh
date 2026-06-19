@@ -2,12 +2,11 @@
 // =====================================================================
 // Aurora Shaders - final.fsh
 // Final post-processing pass:
-//   1. Apply eye-adapted exposure (from composite2's colortex1)
-//   2. FXAA antialiasing (operates on HDR linear scene)
-//   3. Tone map (ACES Filmic, Hill variant)
-//   4. Color grading (saturation, contrast)
-//   5. Subtle vignette
-//   6. sRGB encode
+//   1. FXAA antialiasing (operates on HDR linear scene)
+//   2. Tone map (ACES Filmic, Hill variant)
+//   3. Color grading (saturation, contrast)
+//   4. Subtle vignette
+//   5. sRGB encode
 // Output is the final image written to the back buffer.
 // colortex0/1 are declared in common.glsl — do not redeclare.
 // =====================================================================

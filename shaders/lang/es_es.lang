@@ -18,16 +18,27 @@ option.HALF_RES_GODRAYS=Rayos de Luz a Media Resolución
 
 # Sombras
 option.shadowMapResolution=Resolución de Sombras
-option.SHADOW_PCF_SIZE=Suavidad de Sombras
+option.shadowSoftness=Suavidad de Sombras
 
 # Iluminación y Color
+option.ambientStrength=Intensidad Ambiental
+option.specularStrength=Intensidad Especular
+option.roughness=Rugosidad
 option.sunIntensity=Intensidad del Sol
+option.sunSize=Tamaño del Sol
+option.moonIntensity=Intensidad de la Luna
 option.SATURATION=Saturación
 option.CONTRAST=Contraste
 option.EXPOSURE_ADAPT_SPEED=Velocidad de Adaptación de Exposición
+option.exposureMin=Exposición Mínima
+option.exposureMax=Exposición Máxima
 
 # Post-Procesado
 option.fogDensity=Densidad de Niebla
+option.fogHeightFalloff=Niebla de Altura
+option.cloudSpeed=Velocidad de Nubes
+option.cloudDensity=Densidad de Nubes
+option.cloudHeight=Altura de Nubes
 option.SSAO_RADIUS=Radio de SSAO
 option.SSAO_BIAS=Sesgo de SSAO
 option.AO_STRENGTH=Intensidad de AO
@@ -47,14 +58,25 @@ option.HALF_RES_BLOOM.comment=Ejecuta el Bloom a media resolución para mejorar 
 option.HALF_RES_GODRAYS.comment=Ejecuta los Rayos de Luz a media resolución para mejorar el rendimiento.
 
 option.shadowMapResolution.comment=Valores más altos significan sombras más nítidas, pero menos FPS.
-option.SHADOW_PCF_SIZE.comment=Controla qué tan suaves o borrosos son los bordes de las sombras.
+option.shadowSoftness.comment=Controla qué tan suaves o borrosos son los bordes de las sombras.
 
+option.ambientStrength.comment=Define la luz ambiental mínima sin valores negativos.
+option.specularStrength.comment=Controla la intensidad de los brillos especulares.
+option.roughness.comment=Ajusta la rugosidad global de los materiales.
 option.sunIntensity.comment=Ajusta la luz solar, el color del cielo y el disco visible del sol.
+option.sunSize.comment=Controla el tamaño visible del disco solar.
+option.moonIntensity.comment=Controla la luz de luna y el brillo del disco lunar.
 option.SATURATION.comment=Ajusta la intensidad de los colores en el juego.
 option.CONTRAST.comment=Ajusta la diferencia entre las áreas claras y oscuras.
 option.EXPOSURE_ADAPT_SPEED.comment=Qué tan rápido la cámara se ajusta a áreas brillantes u oscuras.
+option.exposureMin.comment=Límite inferior para una adaptación de exposición estable.
+option.exposureMax.comment=Límite superior para una adaptación de exposición estable.
 
 option.fogDensity.comment=Controla la intensidad de la niebla atmosférica por distancia.
+option.fogHeightFalloff.comment=Controla cuánto se acumula la niebla en zonas bajas.
+option.cloudSpeed.comment=Controla el movimiento de las nubes procedurales.
+option.cloudDensity.comment=Controla la cobertura de las nubes procedurales.
+option.cloudHeight.comment=Controla la altura de la capa de nubes procedurales.
 option.SSAO_RADIUS.comment=Qué tan lejos se extiende la oclusión ambiental en esquinas y grietas.
 option.SSAO_BIAS.comment=Previene artefactos de auto-sombreado. Auméntalo si ves puntos extraños.
 option.AO_STRENGTH.comment=Qué tan oscuras son las sombras de la oclusión ambiental.

@@ -18,16 +18,27 @@ option.HALF_RES_GODRAYS=Half-Res God Rays
 
 # Shadows
 option.shadowMapResolution=Shadow Resolution
-option.SHADOW_PCF_SIZE=Shadow Softness
+option.shadowSoftness=Shadow Softness
 
 # Lighting & Color
+option.ambientStrength=Ambient Strength
+option.specularStrength=Specular Strength
+option.roughness=Roughness
 option.sunIntensity=Sun Intensity
+option.sunSize=Sun Size
+option.moonIntensity=Moon Intensity
 option.SATURATION=Saturation
 option.CONTRAST=Contrast
 option.EXPOSURE_ADAPT_SPEED=Exposure Adapt Speed
+option.exposureMin=Minimum Exposure
+option.exposureMax=Maximum Exposure
 
 # Post-Processing
 option.fogDensity=Fog Density
+option.fogHeightFalloff=Height Fog
+option.cloudSpeed=Cloud Speed
+option.cloudDensity=Cloud Density
+option.cloudHeight=Cloud Height
 option.SSAO_RADIUS=SSAO Radius
 option.SSAO_BIAS=SSAO Bias
 option.AO_STRENGTH=AO Strength
@@ -47,14 +58,25 @@ option.HALF_RES_BLOOM.comment=Runs Bloom at half resolution for better performan
 option.HALF_RES_GODRAYS.comment=Runs God Rays at half resolution for better performance.
 
 option.shadowMapResolution.comment=Higher values mean sharper shadows, but lower FPS.
-option.SHADOW_PCF_SIZE.comment=Controls how soft or blurry the shadow edges are.
+option.shadowSoftness.comment=Controls how soft or blurry the shadow edges are.
 
+option.ambientStrength.comment=Sets the minimum nonnegative ambient light.
+option.specularStrength.comment=Controls Blinn-Phong highlight intensity.
+option.roughness.comment=Scales material roughness for broader or tighter highlights.
 option.sunIntensity.comment=Scales sunlight, sky color, and the visible sun disc.
+option.sunSize.comment=Controls the visible sun disc size.
+option.moonIntensity.comment=Controls moonlight and moon disc brightness.
 option.SATURATION.comment=Adjusts the intensity of colors in the game.
 option.CONTRAST.comment=Adjusts the difference between light and dark areas.
 option.EXPOSURE_ADAPT_SPEED.comment=How fast the camera adjusts to bright or dark areas.
+option.exposureMin.comment=Lower bound for stable eye adaptation.
+option.exposureMax.comment=Upper bound for stable eye adaptation.
 
 option.fogDensity.comment=Controls atmospheric distance fog strength.
+option.fogHeightFalloff.comment=Controls how strongly low areas collect height fog.
+option.cloudSpeed.comment=Controls procedural cloud movement.
+option.cloudDensity.comment=Controls procedural cloud coverage.
+option.cloudHeight.comment=Controls the procedural cloud layer altitude.
 option.SSAO_RADIUS.comment=How far the ambient occlusion spreads into corners and crevices.
 option.SSAO_BIAS.comment=Prevents self-shadowing artifacts. Increase if you see weird dots.
 option.AO_STRENGTH.comment=How dark the ambient occlusion shadows are.

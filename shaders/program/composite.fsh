@@ -62,7 +62,6 @@ void main() {
 
     vec3 albedo = albedoSample.rgb;
     vec3 Nview = normalize(normalSample.rgb * 2.0 - 1.0);
-    vec3 Nworld = normalize(mat3(gbufferModelViewInverse) * Nview);
     int  matId = int(normalSample.a * 255.0 + 0.5);
     float torchLight = matSample.r;  // block light (normalized 0-1)
     float skyLight   = matSample.g;  // sky light (normalized 0-1, encodes day/night)
@@ -72,7 +71,7 @@ void main() {
     // Reconstruct positions
     vec3 viewPos  = reconstructViewPos(uv, depth);
     vec3 worldPos = reconstructWorldPos(uv, depth);
-    vec3 V = normalize(mat3(gbufferModelViewInverse) * normalize(-viewPos));
+    vec3 V = normalize(-viewPos);
 
     // SSAO
     float occlusion = computeSSAO(viewPos, Nview, gbufferProjection);
@@ -81,7 +80,7 @@ void main() {
 
     // Lighting
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
-    vec3 lit = shadeSurface(albedo, Nworld, V, worldPos,
+    vec3 lit = shadeSurface(albedo, Nview, V, worldPos,
                             materialRoughness, metallic, ao,
                             torchLight, skyLight, matId);
 

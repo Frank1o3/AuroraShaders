@@ -45,7 +45,6 @@ vec3 toShadowClipSpace(vec3 worldPos) {
 #endif
 
 float sampleShadowSoft(vec3 shadowUV, float normalBias, float spread) {
-    // Pull sample toward the light by normal bias (kills acne)
     float receiver = shadowUV.z - normalBias;
 
     if (receiver <= 0.0 || receiver >= 1.0) return 1.0;
@@ -57,14 +56,16 @@ float sampleShadowSoft(vec3 shadowUV, float normalBias, float spread) {
 #if SHADOW_SAMPLES >= 8
     for (int i = 0; i < 8; i++) {
         vec2 offset = diskSamples8[i] * spread;
-        float mapDepth = texture(shadowtex0, shadowUV.xy + offset).r;
+        vec2 suv = clamp(shadowUV.xy + offset, vec2(0.001), vec2(0.999));
+        float mapDepth = texture(shadowtex0, suv).r;
         shadow += (receiver - 0.0008 <= mapDepth) ? 1.0 : 0.0;
     }
     return shadow * (1.0 / 8.0);
 #else
     for (int i = 0; i < 4; i++) {
         vec2 offset = diskSamples4[i] * spread;
-        float mapDepth = texture(shadowtex0, shadowUV.xy + offset).r;
+        vec2 suv = clamp(shadowUV.xy + offset, vec2(0.001), vec2(0.999));
+        float mapDepth = texture(shadowtex0, suv).r;
         shadow += (receiver - 0.0008 <= mapDepth) ? 1.0 : 0.0;
     }
     return shadow * (1.0 / 4.0);

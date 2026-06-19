@@ -13,7 +13,17 @@
 // (which provides the full definition) before calling fog functions.
 vec3 getSkyColor(vec3 dir);
 
-// Distance fog: exponential, sky-tinted
+float distanceFogFactor(float dist, float density) {
+    return 1.0 - exp(-dist * density);
+}
+
+float heightFogFactor(vec3 viewPos, float density) {
+    vec3 worldPos = viewToWorld(viewPos, gbufferModelViewInverse) + cameraPosition;
+    float lowAir = max(96.0 - worldPos.y, 0.0);
+    return 1.0 - exp(-lowAir * density * fogHeightFalloff);
+}
+
+// Distance + height fog: exponential, sky-tinted
 vec3 applyDistanceFog(vec3 color, vec3 viewPos, vec3 viewDir) {
     float dist = length(viewPos);
     float density = fogDensity;
@@ -21,8 +31,9 @@ vec3 applyDistanceFog(vec3 color, vec3 viewPos, vec3 viewDir) {
     if (isEyeInWater == 1) density = 0.18;
     if (isEyeInWater == 2) density = 0.55; // lava
 
-    float fogFactor = 1.0 - exp(-dist * density);
-    fogFactor = clamp01(fogFactor);
+    float distFog = distanceFogFactor(dist, density);
+    float heightFog = (isEyeInWater == 0) ? heightFogFactor(viewPos, density) : distFog;
+    float fogFactor = clamp01(mix(distFog, heightFog, 0.5));
 
     vec3 fogColor;
     if (isEyeInWater == 1) {
@@ -34,7 +45,7 @@ vec3 applyDistanceFog(vec3 color, vec3 viewPos, vec3 viewDir) {
         fogColor = getSkyColor(viewDir) * 0.85;
     }
 
-    return mix(color, fogColor, fogFactor);
+    return mix(max(color, vec3(0.0)), fogColor, fogFactor);
 }
 
 // Subtle volumetric haze near the horizon (cheap).

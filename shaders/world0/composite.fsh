@@ -57,7 +57,6 @@ void main() {
 
     vec3 albedo = albedoSample.rgb;
     vec3 Nview = normalize(normalSample.rgb * 2.0 - 1.0);
-    vec3 Nworld = normalize(mat3(gbufferModelViewInverse) * Nview);
     int matId = int(normalSample.a * 255.0 + 0.5);
     // Lightmap coords are now normalized to 0-1 (done in vertex shader)
     float torchLight = matSample.r;  // block light (torches, glowstone)
@@ -67,7 +66,7 @@ void main() {
 
     vec3 viewPos = reconstructViewPos(uv, depth);
     vec3 worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz + cameraPosition;
-    vec3 V = normalize(mat3(gbufferModelViewInverse) * normalize(-viewPos));
+    vec3 V = normalize(-viewPos);
 
     // SSAO
     float occlusion = computeSSAO(viewPos, Nview, gbufferProjection);
@@ -75,7 +74,7 @@ void main() {
     float ao = 1.0 - occlusion * 0.5;
 
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
-    vec3 lit = shadeSurface(albedo, Nworld, V, worldPos, materialRoughness, metallic, ao, torchLight, skyLight, matId);
+    vec3 lit = shadeSurface(albedo, Nview, V, worldPos, materialRoughness, metallic, ao, torchLight, skyLight, matId);
     lit *= aoMult;
 
     // Emissive materials (lava, glowstone, custom emissive blocks)
