@@ -4,9 +4,25 @@
 #ifndef AURORA_SETTINGS_GLSL
 #define AURORA_SETTINGS_GLSL
 
-// ---------- Quality tier ----------
-#ifndef QUALITY_LEVEL
-#define QUALITY_LEVEL 1 // [0 1 2 3] Quality tier (0=low, 1=medium, 2=high, 3=ultra)
+// ---------- Required Iris-facing controls ----------
+#ifndef qualityLevel
+#define qualityLevel 1 // [0 1 2] Quality tier (0=low, 1=medium, 2=high)
+#endif
+
+#ifndef shadowMapResolution
+#define shadowMapResolution 2048 // [512 1024 2048 4096] Shadow map resolution
+#endif
+
+#ifndef fogDensity
+#define fogDensity 0.0085 // [0.0000 0.0025 0.0050 0.0085 0.0125 0.0200 0.0350] Atmospheric fog density
+#endif
+
+#ifndef sunIntensity
+#define sunIntensity 1.0 // [0.0 0.25 0.5 0.75 1.0 1.25 1.5 2.0] Sun and sky intensity
+#endif
+
+#ifndef bloomThreshold
+#define bloomThreshold 1.2 // [0.5 0.8 1.0 1.2 1.5 2.0 2.5 3.0] Bloom threshold
 #endif
 
 // ---------- Shadow ----------
@@ -17,8 +33,6 @@
 #ifndef SHADOW_PCF_SIZE
 #define SHADOW_PCF_SIZE 1.5 // [0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0] Shadow PCF size
 #endif
-
-const int shadowMapResolution = 2048; // [512 1024 2048 4096] Shadow map resolution
 
 // ---------- SSAO ----------
 #ifndef SSAO_RADIUS
@@ -34,10 +48,6 @@ const int shadowMapResolution = 2048; // [512 1024 2048 4096] Shadow map resolut
 #endif
 
 // ---------- Bloom ----------
-#ifndef BLOOM_THRESHOLD
-#define BLOOM_THRESHOLD 1.2 // [0.5 1.0 1.5 2.0 2.5 3.0] Bloom threshold
-#endif
-
 #ifndef BLOOM_STRENGTH
 #define BLOOM_STRENGTH 1.0 // [0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0] Bloom strength
 #endif
@@ -79,15 +89,27 @@ const int shadowMapResolution = 2048; // [512 1024 2048 4096] Shadow map resolut
 #define HALF_RES_GODRAYS 0 // [0 1] Half resolution Godrays
 #endif
 
-// ---------- Sample counts (driven by QUALITY_LEVEL) ----------
-#if QUALITY_LEVEL >= 2
-  #define SHADOW_SAMPLES 12
-  #define SSAO_SAMPLES   16
-#elif QUALITY_LEVEL >= 1
+// ---------- Quality gates ----------
+#if qualityLevel >= 1
+  #define ENABLE_SHADOWS 1
+#else
+  #define ENABLE_SHADOWS 0
+#endif
+
+#if qualityLevel >= 2
+  #define ENABLE_SSAO 1
+#else
+  #define ENABLE_SSAO 0
+#endif
+
+#if qualityLevel >= 2
   #define SHADOW_SAMPLES 8
   #define SSAO_SAMPLES   8
-#else
+#elif qualityLevel >= 1
   #define SHADOW_SAMPLES 4
+  #define SSAO_SAMPLES   4
+#else
+  #define SHADOW_SAMPLES 1
   #define SSAO_SAMPLES   4
 #endif
 

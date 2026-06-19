@@ -21,7 +21,7 @@ vec3 toShadowClipSpace(vec3 worldPos) {
 
 // ---------------------------------------------------------------------
 // Soft shadow: rotated-disk PCF.
-// Sample count is driven by QUALITY_LEVEL via SHADOW_SAMPLES.
+// Sample count is driven by qualityLevel via SHADOW_SAMPLES.
 // Uses interleaved gradient noise to rotate the kernel per pixel;
 // after temporal accumulation this yields a high-quality filter at
 // very low per-frame cost.
@@ -109,6 +109,9 @@ float sampleShadowSoft(vec3 shadowUV, float normalBias, float spread) {
 // Public entry: compute shadow factor for a world position & normal.
 // ---------------------------------------------------------------------
 float getShadowFactor(vec3 worldPos, vec3 worldNormal) {
+#if ENABLE_SHADOWS == 0
+    return 1.0;
+#else
     vec3 shadowUV = toShadowClipSpace(worldPos);
 
     // Slope-based normal bias: steeper surfaces get more bias
@@ -123,6 +126,7 @@ float getShadowFactor(vec3 worldPos, vec3 worldNormal) {
     spread *= mix(0.7, 1.4, 1.0 - clamp01(length(shadowUV.xy - 0.5) * 2.0));
 
     return sampleShadowSoft(shadowUV, normalBias, spread);
+#endif
 }
 
 // ---------------------------------------------------------------------
@@ -130,6 +134,9 @@ float getShadowFactor(vec3 worldPos, vec3 worldNormal) {
 // Reads from shadowtex1 (transparent) and shadowcolor0 for tint.
 // ---------------------------------------------------------------------
 vec3 getColoredShadow(vec3 worldPos) {
+#if ENABLE_SHADOWS == 0
+    return vec3(1.0);
+#else
     vec3 shadowUV = toShadowClipSpace(worldPos);
     if (any(lessThan(shadowUV.xy, vec2(0.0))) ||
         any(greaterThan(shadowUV.xy, vec2(1.0)))) return vec3(1.0);
@@ -149,6 +156,7 @@ vec3 getColoredShadow(vec3 worldPos) {
     } else {
         return vec3(0.0);
     }
+#endif
 }
 
 #endif // AURORA_SHADOWS_GLSL

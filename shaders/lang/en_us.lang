@@ -11,7 +11,7 @@ screen.ANIMATIONS=Animations & Misc
 # Option Display Names
 # =========================
 # Performance
-option.QUALITY_LEVEL=Quality Preset
+option.qualityLevel=Quality Preset
 option.HALF_RES_SSAO=Half-Res SSAO
 option.HALF_RES_BLOOM=Half-Res Bloom
 option.HALF_RES_GODRAYS=Half-Res God Rays
@@ -21,15 +21,17 @@ option.shadowMapResolution=Shadow Resolution
 option.SHADOW_PCF_SIZE=Shadow Softness
 
 # Lighting & Color
+option.sunIntensity=Sun Intensity
 option.SATURATION=Saturation
 option.CONTRAST=Contrast
 option.EXPOSURE_ADAPT_SPEED=Exposure Adapt Speed
 
 # Post-Processing
+option.fogDensity=Fog Density
 option.SSAO_RADIUS=SSAO Radius
 option.SSAO_BIAS=SSAO Bias
 option.AO_STRENGTH=AO Strength
-option.BLOOM_THRESHOLD=Bloom Threshold
+option.bloomThreshold=Bloom Threshold
 option.BLOOM_STRENGTH=Bloom Strength
 
 # Animations & Misc
@@ -39,7 +41,7 @@ option.WATER_REFLECT=Water Reflections
 # =========================
 # Tooltips (Hover Text)
 # =========================
-option.QUALITY_LEVEL.comment=Changes the overall rendering quality and sample counts.
+option.qualityLevel.comment=Changes the overall rendering quality and sample counts.
 option.HALF_RES_SSAO.comment=Runs SSAO at half resolution for better performance.
 option.HALF_RES_BLOOM.comment=Runs Bloom at half resolution for better performance.
 option.HALF_RES_GODRAYS.comment=Runs God Rays at half resolution for better performance.
@@ -47,14 +49,16 @@ option.HALF_RES_GODRAYS.comment=Runs God Rays at half resolution for better perf
 option.shadowMapResolution.comment=Higher values mean sharper shadows, but lower FPS.
 option.SHADOW_PCF_SIZE.comment=Controls how soft or blurry the shadow edges are.
 
+option.sunIntensity.comment=Scales sunlight, sky color, and the visible sun disc.
 option.SATURATION.comment=Adjusts the intensity of colors in the game.
 option.CONTRAST.comment=Adjusts the difference between light and dark areas.
 option.EXPOSURE_ADAPT_SPEED.comment=How fast the camera adjusts to bright or dark areas.
 
+option.fogDensity.comment=Controls atmospheric distance fog strength.
 option.SSAO_RADIUS.comment=How far the ambient occlusion spreads into corners and crevices.
 option.SSAO_BIAS.comment=Prevents self-shadowing artifacts. Increase if you see weird dots.
 option.AO_STRENGTH.comment=How dark the ambient occlusion shadows are.
-option.BLOOM_THRESHOLD.comment=How bright a light source must be to start glowing.
+option.bloomThreshold.comment=How bright a light source must be to start glowing.
 option.BLOOM_STRENGTH.comment=How intense the glow effect is.
 
 option.WAVING_FOLIAGE.comment=Enables or disables the waving animation for plants and leaves.
@@ -64,10 +68,9 @@ option.WATER_REFLECT.comment=Enables or disables reflections on the water surfac
 # Value Labels
 # =========================
 # Quality Level Dropdown
-value.QUALITY_LEVEL.0=Low (Potato)
-value.QUALITY_LEVEL.1=Medium
-value.QUALITY_LEVEL.2=High
-value.QUALITY_LEVEL.3=Ultra (Ballers)
+value.qualityLevel.0=Low
+value.qualityLevel.1=Medium
+value.qualityLevel.2=High
 
 # [0 1] Toggles
 value.HALF_RES_SSAO.0=Off

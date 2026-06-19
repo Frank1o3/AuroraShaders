@@ -1,7 +1,7 @@
 // =====================================================================
 // Aurora Shaders - ssao.glsl
 // Scalable ambient occlusion (GTAO-inspired).
-// Sample count is driven by QUALITY_LEVEL via SSAO_SAMPLES.
+// Sample count is driven by qualityLevel via SSAO_SAMPLES.
 // Designed for half-resolution rendering when HALF_RES_SSAO=1.
 // =====================================================================
 #ifndef AURORA_SSAO_GLSL
@@ -18,7 +18,7 @@ vec3 reconstructViewNormal(vec3 viewPos) {
 }
 
 // ---------------------------------------------------------------------
-// Hemisphere sample sets, selected by QUALITY_LEVEL.
+// Hemisphere sample sets, selected by qualityLevel.
 // ---------------------------------------------------------------------
 #if SSAO_SAMPLES >= 16
   const vec3 ssaoSamples16[16] = vec3[16](
@@ -61,6 +61,9 @@ vec3 reconstructViewNormal(vec3 viewPos) {
 
 // Returns occlusion in 0..1 (1 = fully occluded)
 float computeSSAO(vec3 viewPos, vec3 viewNormal, mat4 proj) {
+#if ENABLE_SSAO == 0
+    return 0.0;
+#else
     // SSAO_RADIUS and SSAO_BIAS come from settings.glsl (guaranteed defined)
     float radius = SSAO_RADIUS;
     float bias   = SSAO_BIAS;
@@ -143,6 +146,7 @@ float computeSSAO(vec3 viewPos, vec3 viewNormal, mat4 proj) {
 
     if (totalWeight < 1.0) return 0.0;
     return occlusion / totalWeight;
+#endif
 }
 
 // Convert raw occlusion (0..1) into a soft AO multiplier for shading

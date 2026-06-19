@@ -43,29 +43,13 @@ void main() {
         vec3 viewDir = normalize(reconstructViewPos(uv, 1.0));
         vec3 sky = getSkyColor(viewDir);
 
-        // Sun glow
-        vec3 sunDir = normalize(sunPosition);
-        float sunDot = clamp01(dot(viewDir, sunDir));
-        sky += getSunLightColor() * pow(sunDot, 256.0);
-        sky += getSunLightColor() * pow(sunDot, 8.0) * 0.15;
-
-        // Moon glow (only at night)
-        if (moonlightFactor() > 0.3) {
-            vec3 moonDir = normalize(moonPosition);
-            float moonDot = clamp01(dot(viewDir, moonDir));
-            sky += getMoonLightColor() * pow(moonDot, 256.0) * 6.0;
-            sky += getMoonLightColor() * pow(moonDot, 8.0) * 0.4;
-        }
-
-        // Stars (cheap procedural)
-        if (moonlightFactor() > 0.2) {
-            float starHash = fract(sin(dot(viewDir.xy * 200.0, vec2(12.9898, 78.233))) * 43758.5453);
-            sky += vec3(starHash) * pow(starHash, 32.0) * 2.0 * moonlightFactor();
-        }
+        sky += getSunSkyAdd(viewDir);
+        sky += getMoonSkyAdd(viewDir);
+        sky += getStarField(viewDir);
 
         outColor  = vec4(sky, 1.0);
         outSSAO   = vec4(1.0);
-        outBloom  = vec4(max(sky - 0.6, 0.0), 1.0);
+        outBloom  = vec4(max(sky - bloomThreshold, 0.0) * BLOOM_STRENGTH, 1.0);
         return;
     }
 
@@ -75,7 +59,8 @@ void main() {
     vec4 matSample    = texture(colortex2, uv);
 
     vec3 albedo = albedoSample.rgb;
-    vec3 N = normalSample.rgb * 2.0 - 1.0;
+    vec3 Nview = normalize(normalSample.rgb * 2.0 - 1.0);
+    vec3 Nworld = normalize(mat3(gbufferModelViewInverse) * Nview);
     int  matId = int(normalSample.a * 255.0 + 0.5);
     float torchLight = matSample.r;  // block light (normalized 0-1)
     float skyLight   = matSample.g;  // sky light (normalized 0-1, encodes day/night)
@@ -85,16 +70,16 @@ void main() {
     // Reconstruct positions
     vec3 viewPos  = reconstructViewPos(uv, depth);
     vec3 worldPos = reconstructWorldPos(uv, depth);
-    vec3 V = normalize(-viewPos);
+    vec3 V = normalize(mat3(gbufferModelViewInverse) * normalize(-viewPos));
 
     // SSAO
-    float occlusion = computeSSAO(viewPos, N, gbufferProjection);
+    float occlusion = computeSSAO(viewPos, Nview, gbufferProjection);
     float aoMult = aoToMultiplier(occlusion);
     float ao = 1.0 - occlusion * 0.5;
 
     // Lighting
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
-    vec3 lit = shadeSurface(albedo, N, V, worldPos,
+    vec3 lit = shadeSurface(albedo, Nworld, V, worldPos,
                             roughness, metallic, ao,
                             torchLight, skyLight, matId);
 
@@ -120,5 +105,5 @@ void main() {
 
     outColor  = vec4(lit, 1.0);
     outSSAO   = vec4(ao, 0.0, 0.0, 1.0);
-    outBloom  = vec4(max(lit - BLOOM_THRESHOLD, 0.0) * BLOOM_STRENGTH, 1.0);
+    outBloom  = vec4(max(lit - bloomThreshold, 0.0) * BLOOM_STRENGTH, 1.0);
 }

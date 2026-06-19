@@ -11,7 +11,7 @@ screen.ANIMATIONS=Animaciones y Varios
 # Nombres de Opciones
 # =========================
 # Rendimiento
-option.QUALITY_LEVEL=Nivel de Calidad
+option.qualityLevel=Nivel de Calidad
 option.HALF_RES_SSAO=SSAO a Media Resolución
 option.HALF_RES_BLOOM=Bloom a Media Resolución
 option.HALF_RES_GODRAYS=Rayos de Luz a Media Resolución
@@ -21,15 +21,17 @@ option.shadowMapResolution=Resolución de Sombras
 option.SHADOW_PCF_SIZE=Suavidad de Sombras
 
 # Iluminación y Color
+option.sunIntensity=Intensidad del Sol
 option.SATURATION=Saturación
 option.CONTRAST=Contraste
 option.EXPOSURE_ADAPT_SPEED=Velocidad de Adaptación de Exposición
 
 # Post-Procesado
+option.fogDensity=Densidad de Niebla
 option.SSAO_RADIUS=Radio de SSAO
 option.SSAO_BIAS=Sesgo de SSAO
 option.AO_STRENGTH=Intensidad de AO
-option.BLOOM_THRESHOLD=Umbral de Bloom
+option.bloomThreshold=Umbral de Bloom
 option.BLOOM_STRENGTH=Intensidad de Bloom
 
 # Animaciones y Varios
@@ -39,7 +41,7 @@ option.WATER_REFLECT=Reflejos en el Agua
 # =========================
 # Descripciones (Tooltips)
 # =========================
-option.QUALITY_LEVEL.comment=Cambia la calidad general de renderizado y el número de muestras.
+option.qualityLevel.comment=Cambia la calidad general de renderizado y el número de muestras.
 option.HALF_RES_SSAO.comment=Ejecuta el SSAO a media resolución para mejorar el rendimiento.
 option.HALF_RES_BLOOM.comment=Ejecuta el Bloom a media resolución para mejorar el rendimiento.
 option.HALF_RES_GODRAYS.comment=Ejecuta los Rayos de Luz a media resolución para mejorar el rendimiento.
@@ -47,14 +49,16 @@ option.HALF_RES_GODRAYS.comment=Ejecuta los Rayos de Luz a media resolución par
 option.shadowMapResolution.comment=Valores más altos significan sombras más nítidas, pero menos FPS.
 option.SHADOW_PCF_SIZE.comment=Controla qué tan suaves o borrosos son los bordes de las sombras.
 
+option.sunIntensity.comment=Ajusta la luz solar, el color del cielo y el disco visible del sol.
 option.SATURATION.comment=Ajusta la intensidad de los colores en el juego.
 option.CONTRAST.comment=Ajusta la diferencia entre las áreas claras y oscuras.
 option.EXPOSURE_ADAPT_SPEED.comment=Qué tan rápido la cámara se ajusta a áreas brillantes u oscuras.
 
+option.fogDensity.comment=Controla la intensidad de la niebla atmosférica por distancia.
 option.SSAO_RADIUS.comment=Qué tan lejos se extiende la oclusión ambiental en esquinas y grietas.
 option.SSAO_BIAS.comment=Previene artefactos de auto-sombreado. Auméntalo si ves puntos extraños.
 option.AO_STRENGTH.comment=Qué tan oscuras son las sombras de la oclusión ambiental.
-option.BLOOM_THRESHOLD.comment=Qué tan brillante debe ser una fuente de luz para empezar a brillar.
+option.bloomThreshold.comment=Qué tan brillante debe ser una fuente de luz para empezar a brillar.
 option.BLOOM_STRENGTH.comment=Qué tan intenso es el efecto de brillo.
 
 option.WAVING_FOLIAGE.comment=Activa o desactiva la animación de movimiento para plantas y hojas.
@@ -64,7 +68,6 @@ option.WATER_REFLECT.comment=Activa o desactiva los reflejos en la superficie de
 # Etiquetas de Valores
 # =========================
 # Menú desplegable de Nivel de Calidad
-value.QUALITY_LEVEL.0=Bajo (Patata)
-value.QUALITY_LEVEL.1=Medio
-value.QUALITY_LEVEL.2=Alto
-value.QUALITY_LEVEL.3=Ultra
+value.qualityLevel.0=Bajo
+value.qualityLevel.1=Medio
+value.qualityLevel.2=Alto

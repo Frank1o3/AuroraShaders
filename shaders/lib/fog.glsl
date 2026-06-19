@@ -16,11 +16,12 @@ vec3 getSkyColor(vec3 dir);
 // Distance fog: exponential, sky-tinted
 vec3 applyDistanceFog(vec3 color, vec3 viewPos, vec3 viewDir) {
     float dist = length(viewPos);
-    float fogDensity = 0.0085;
-    if (isEyeInWater == 1) fogDensity = 0.18;
-    if (isEyeInWater == 2) fogDensity = 0.55; // lava
+    float density = fogDensity;
+    if (qualityLevel == 0 && isEyeInWater == 0) density *= 0.35;
+    if (isEyeInWater == 1) density = 0.18;
+    if (isEyeInWater == 2) density = 0.55; // lava
 
-    float fogFactor = 1.0 - exp(-dist * fogDensity);
+    float fogFactor = 1.0 - exp(-dist * density);
     fogFactor = clamp01(fogFactor);
 
     vec3 fogColor;
@@ -41,7 +42,9 @@ vec3 applyDistanceFog(vec3 color, vec3 viewPos, vec3 viewDir) {
 vec3 applyHorizonHaze(vec3 color, vec3 viewDir, vec3 viewPos) {
     if (isEyeInWater != 0) return color;
     float upDot = viewDir.y;
-    float horizonMask = pow(1.0 - clamp01(upDot), 6.0);
+    float h = 1.0 - clamp01(upDot);
+    float h2 = h * h;
+    float horizonMask = h2 * h2 * h2;
     float dist = length(viewPos);
     float falloff = clamp01((dist - 16.0) / 128.0);
 

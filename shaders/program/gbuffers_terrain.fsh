@@ -55,7 +55,7 @@ void main() {
     // Normal: use tangent space if available, else model normal
     vec3 N = normalize(v_Normal);
     if (length(v_Tangent.xyz) > 0.5) {
-        vec3 T = normalize(mat3(gbufferModelViewInverse) * gl_NormalMatrix * v_Tangent.xyz);
+        vec3 T = normalize(gl_NormalMatrix * v_Tangent.xyz);
         vec3 B = cross(N, T) * v_Tangent.w;
         mat3 TBN = mat3(T, B, N);
 

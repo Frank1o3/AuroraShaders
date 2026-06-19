@@ -39,7 +39,7 @@ void main() {
     vec4 matSample    = texture(colortex2, uv);
 
     vec3 albedo = albedoSample.rgb;
-    vec3 N = normalSample.rgb * 2.0 - 1.0;
+    vec3 Nview = normalize(normalSample.rgb * 2.0 - 1.0);
     int matId = int(normalSample.a * 255.0 + 0.5);
     float torchLight = matSample.r;
     float skyLight   = matSample.g;
@@ -47,17 +47,16 @@ void main() {
     float emissive   = matSample.a;
 
     vec3 viewPos = reconstructViewPos(uv, depth);
-    vec3 worldPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz + cameraPosition;
-    vec3 V = normalize(-viewPos);
-
     // Strong ambient (no directional light in nether)
-    float occlusion = computeSSAO(viewPos, N, gbufferProjection);
+    float occlusion = computeSSAO(viewPos, Nview, gbufferProjection);
+    float aoMult = aoToMultiplier(occlusion);
     float ao = 1.0 - occlusion * 0.5;
 
     vec3 ambient = vec3(0.45, 0.18, 0.10) * albedo * ao;
     vec3 blockL  = blockLightColor(torchLight) * albedo;
 
     vec3 lit = ambient + blockL;
+    lit *= aoMult;
     if (emissive > 0.01 || matId == MAT_LAVA || matId == MAT_EMISSIVE) {
         lit += albedo * 2.5;
     }
@@ -67,5 +66,5 @@ void main() {
 
     outColor = vec4(lit, 1.0);
     outSSAO = vec4(ao, 0.0, 0.0, 1.0);
-    outBloom = vec4(max(lit - BLOOM_THRESHOLD, 0.0) * BLOOM_STRENGTH, 1.0);
+    outBloom = vec4(max(lit - bloomThreshold, 0.0) * BLOOM_STRENGTH, 1.0);
 }

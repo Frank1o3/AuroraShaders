@@ -19,11 +19,15 @@ vec3 skyColorDayHoriz  = vec3(0.55, 0.75, 1.00);
 vec3 skyColorSunset    = vec3(1.00, 0.55, 0.30);
 vec3 skyColorNight     = vec3(0.012, 0.020, 0.045);
 
+float fastPow01(float x, float p) {
+    return exp2(log2(max(clamp01(x), EPSILON)) * p);
+}
+
 vec3 getSkyColor(vec3 dir) {
     float upDot = clamp01(dir.y);
     float day = daylightFactor();
 
-    vec3 dayCol = mix(skyColorDayHoriz, skyColorDayTop, pow(upDot, 0.6));
+    vec3 dayCol = mix(skyColorDayHoriz, skyColorDayTop, fastPow01(upDot, 0.6));
     vec3 nightCol = skyColorNight;
 
     // Sunrise / sunset tint at low sun
@@ -31,6 +35,7 @@ vec3 getSkyColor(vec3 dir) {
     vec3 tint = mix(skyColorSunset, skyColorDayHoriz, 0.6) * sunLow * day;
 
     vec3 col = mix(nightCol, dayCol, day) + tint;
+    col *= sunIntensity;
     return col;
 }
 
@@ -41,8 +46,8 @@ vec3 getSunLightColor() {
     float day = daylightFactor();
     // Warm white at noon, slightly orange at horizon
     float horizonFactor = 1.0 - day; // higher near sunrise/sunset
-    vec3 noon = vec3(1.00, 0.96, 0.88) * 1.5;
-    vec3 sunset = vec3(1.20, 0.65, 0.35) * 1.1;
+    vec3 noon = vec3(1.00, 0.96, 0.88) * 1.5 * sunIntensity;
+    vec3 sunset = vec3(1.20, 0.65, 0.35) * 1.1 * sunIntensity;
     vec3 night  = vec3(0.00, 0.00, 0.00);
     vec3 dayCol = mix(noon, sunset, horizonFactor * 0.7);
     return mix(vec3(0.0), dayCol, day);
@@ -51,6 +56,41 @@ vec3 getSunLightColor() {
 vec3 getMoonLightColor() {
     // Cool, soft blue moonlight — only visible at night
     return vec3(0.45, 0.55, 0.85) * 0.18 * moonlightFactor();
+}
+
+vec3 getSunSkyAdd(vec3 viewDir) {
+    vec3 sunDir = normalize(sunPosition);
+    float sunDot = clamp01(dot(viewDir, sunDir));
+    float day = daylightFactor();
+
+    float disc = smoothstep(0.99970, 0.99992, sunDot);
+    float innerGlow = fastPow01(sunDot, 48.0);
+    float outerGlow = fastPow01(sunDot, 8.0);
+
+    float rayNoise = interleavedGradientNoise(gl_FragCoord.xy + vec2(frameCounter));
+    float horizon = clamp01(1.0 - abs(viewDir.y) * 1.8);
+    float rays = fastPow01(sunDot, 18.0) * horizon * mix(0.65, 1.0, rayNoise);
+
+    return getSunLightColor() * day * (disc * 5.5 + innerGlow * 0.55 + outerGlow * 0.12 + rays * 0.22);
+}
+
+vec3 getMoonSkyAdd(vec3 viewDir) {
+    vec3 moonDir = normalize(moonPosition);
+    float moonDot = clamp01(dot(viewDir, moonDir));
+    float night = moonlightFactor();
+
+    float disc = smoothstep(0.99955, 0.99986, moonDot);
+    float glow = fastPow01(moonDot, 16.0);
+    return getMoonLightColor() * night * (disc * 5.0 + glow * 0.35);
+}
+
+vec3 getStarField(vec3 viewDir) {
+    float night = moonlightFactor();
+    if (night <= 0.2) return vec3(0.0);
+
+    float h = fract(sin(dot(viewDir.xy * 220.0 + viewDir.zz * 47.0, vec2(12.9898, 78.233))) * 43758.5453);
+    float stars = smoothstep(0.992, 1.0, h) * night;
+    return vec3(stars) * 1.6;
 }
 
 // Returns the color of the active shadow light (sun during day, moon at night).
@@ -81,7 +121,9 @@ float geometrySmith(float NdotV, float NdotL, float roughness) {
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    float f = 1.0 - cosTheta;
+    float f2 = f * f;
+    return F0 + (1.0 - F0) * f2 * f2 * f;
 }
 
 vec3 specularCookTorrance(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness) {

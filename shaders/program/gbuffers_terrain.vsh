@@ -23,7 +23,7 @@ void main() {
     // Pass-through texture & lightmap coords
     v_TexCoord   = gl_MultiTexCoord0.st;
     // Minecraft lightmap UVs are in 0-240 range; normalize to 0-1
-    v_LightCoord = gl_MultiTexCoord1.st / 240.0;
+    v_LightCoord = max(gl_MultiTexCoord1.xy, vec2(0.001)) / 240.0;
 
     // Iris standard: gl_Normal is in model space, convert to view space
     vec4 viewPos = gl_ModelViewMatrix * gl_Vertex;
@@ -33,8 +33,8 @@ void main() {
     vec4 worldPos = gbufferModelViewInverse * viewPos;
     v_WorldPos = worldPos.xyz + cameraPosition;
 
-    // Normal (world space)
-    v_Normal = normalize(mat3(gbufferModelViewInverse) * gl_NormalMatrix * gl_Normal);
+    // Normal (view space)
+    v_Normal = normalize(gl_NormalMatrix * gl_Normal);
 
     // Tangent
     v_Tangent = at_tangent;
