@@ -9,6 +9,7 @@
 #include "../lib/lighting.glsl"
 #include "../lib/ssao.glsl"
 #include "../lib/fog.glsl"
+#include "../lib/clouds.glsl"
 
 layout (location = 0) out vec4 outColor;     // colortex0 - lit scene
 layout (location = 1) out vec4 outSSAO;      // colortex1 - AO buffer
@@ -43,6 +44,7 @@ void main() {
         vec3 viewDir = normalize(reconstructViewPos(uv, 1.0));
         vec3 sky = getSkyColor(viewDir);
 
+        sky = applyProceduralClouds(sky, viewDir);
         sky += getSunSkyAdd(viewDir);
         sky += getMoonSkyAdd(viewDir);
         sky += getStarField(viewDir);
@@ -64,7 +66,7 @@ void main() {
     int  matId = int(normalSample.a * 255.0 + 0.5);
     float torchLight = matSample.r;  // block light (normalized 0-1)
     float skyLight   = matSample.g;  // sky light (normalized 0-1, encodes day/night)
-    float roughness  = matSample.b;
+    float materialRoughness  = matSample.b;
     float emissive   = matSample.a;
 
     // Reconstruct positions
@@ -80,7 +82,7 @@ void main() {
     // Lighting
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
     vec3 lit = shadeSurface(albedo, Nworld, V, worldPos,
-                            roughness, metallic, ao,
+                            materialRoughness, metallic, ao,
                             torchLight, skyLight, matId);
 
     // Apply vanilla AO baked into vertex colors (subtle)

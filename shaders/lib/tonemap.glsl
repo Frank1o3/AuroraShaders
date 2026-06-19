@@ -65,10 +65,10 @@ vec3 colorGrade(vec3 color, float saturation, float contrast, float brightness) 
 // for the current frame. Speed is controlled by EXPOSURE_ADAPT_SPEED.
 // ---------------------------------------------------------------------
 float computeAdaptedExposure(float sceneLuminance, float previousExposure, float dt) {
-    float targetExposure = 1.0 / (sceneLuminance + 1.0);
-    targetExposure = clamp(targetExposure, 0.05, 4.0);
-    float speed = EXPOSURE_ADAPT_SPEED;
-    return mix(previousExposure, targetExposure, clamp01(dt * speed));
+    float targetExposure = 1.0 / (max(sceneLuminance, 0.0) + 0.1);
+    targetExposure = clamp(targetExposure, 0.08, 3.5);
+    float rate = clamp01(0.05 * EXPOSURE_ADAPT_SPEED);
+    return mix(previousExposure, targetExposure, rate);
 }
 
 // ---------------------------------------------------------------------

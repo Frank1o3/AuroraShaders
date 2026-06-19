@@ -43,7 +43,7 @@ void main() {
     int matId = int(normalSample.a * 255.0 + 0.5);
     float torchLight = matSample.r;
     float skyLight   = matSample.g;
-    float roughness  = matSample.b;
+    float materialRoughness  = matSample.b;
     float emissive   = matSample.a;
 
     vec3 viewPos = reconstructViewPos(uv, depth);

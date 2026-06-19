@@ -55,7 +55,7 @@ vec3 getSunLightColor() {
 
 vec3 getMoonLightColor() {
     // Cool, soft blue moonlight — only visible at night
-    return vec3(0.45, 0.55, 0.85) * 0.18 * moonlightFactor();
+    return vec3(0.45, 0.55, 0.85) * moonIntensity * moonlightFactor();
 }
 
 vec3 getSunSkyAdd(vec3 viewDir) {
@@ -63,7 +63,8 @@ vec3 getSunSkyAdd(vec3 viewDir) {
     float sunDot = clamp01(dot(viewDir, sunDir));
     float day = daylightFactor();
 
-    float disc = smoothstep(0.99970, 0.99992, sunDot);
+    float discSize = max(sunSize, 0.1);
+    float disc = smoothstep(1.0 - 0.00030 * discSize, 1.0 - 0.00008 * discSize, sunDot);
     float innerGlow = fastPow01(sunDot, 48.0);
     float outerGlow = fastPow01(sunDot, 8.0);
 
@@ -81,7 +82,7 @@ vec3 getMoonSkyAdd(vec3 viewDir) {
 
     float disc = smoothstep(0.99955, 0.99986, moonDot);
     float glow = fastPow01(moonDot, 16.0);
-    return getMoonLightColor() * night * (disc * 5.0 + glow * 0.35);
+    return getMoonLightColor() * night * (disc * 3.8 + glow * 0.28);
 }
 
 vec3 getStarField(vec3 viewDir) {
@@ -105,15 +106,15 @@ vec3 getActiveLightColor() {
 // ---------------------------------------------------------------------
 // GGX specular (Cook-Torrance) - cheap version
 // ---------------------------------------------------------------------
-float distributionGGX(float NdotH, float roughness) {
-    float a  = roughness * roughness;
+float distributionGGX(float NdotH, float materialRoughness) {
+    float a  = materialRoughness * materialRoughness;
     float a2 = a * a;
     float d  = (NdotH * a2 - NdotH) * NdotH + 1.0;
     return a2 / (PI * d * d + EPSILON);
 }
 
-float geometrySmith(float NdotV, float NdotL, float roughness) {
-    float r = roughness + 1.0;
+float geometrySmith(float NdotV, float NdotL, float materialRoughness) {
+    float r = materialRoughness + 1.0;
     float k = (r * r) / 8.0;
     float ggxV = NdotV / (NdotV * (1.0 - k) + k);
     float ggxL = NdotL / (NdotL * (1.0 - k) + k);
@@ -126,15 +127,15 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * f2 * f2 * f;
 }
 
-vec3 specularCookTorrance(vec3 N, vec3 V, vec3 L, vec3 F0, float roughness) {
+vec3 specularCookTorrance(vec3 N, vec3 V, vec3 L, vec3 F0, float materialRoughness) {
     vec3 H = normalize(V + L);
     float NdotL = clamp01(dot(N, L));
     float NdotV = clamp01(dot(N, V));
     float NdotH = clamp01(dot(N, H));
     float VdotH = clamp01(dot(V, H));
 
-    float D = distributionGGX(NdotH, roughness);
-    float G = geometrySmith(NdotV, NdotL, roughness);
+    float D = distributionGGX(NdotH, materialRoughness);
+    float G = geometrySmith(NdotV, NdotL, materialRoughness);
     vec3  F = fresnelSchlick(VdotH, F0);
 
     vec3 num = D * G * F;
@@ -163,34 +164,33 @@ vec3 ambientHemisphere(vec3 N, vec3 viewPos) {
 // Full direct lighting (sun/moon) with shadow + soft fill.
 // ---------------------------------------------------------------------
 vec3 computeDirectLighting(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
-                           float roughness, float metallic, float ao) {
+                           float materialRoughness, float metallic, float ao) {
+    N = normalize(N);
+    V = normalize(V);
     vec3 L = normalize(shadowLightPosition);
-    float NdotL = clamp01(dot(N, L));
-
-    // Active shadow (soft)
+    float NdotL = max(dot(N, L), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
     float shadow = getShadowFactor(worldPos, N);
-
     vec3 lightColor = getActiveLightColor();
 
-    // Wrap-around soft fill for low light angles (gives the moonlit look
-    // readability even when NdotL ~ 0)
-    float wrap = clamp01(NdotL * 0.75 + 0.25);
-
-    // Diffuse (half-Lambert wrap, no π normalization since wrap changes
-    // the energy integral anyway — the lightColor intensity is tuned for this)
-    vec3 diffuse = albedo * lightColor * wrap * shadow;
-
-    // Specular (Cook-Torrance) — skip when surface faces away from light
+    vec3 ambient = albedo * vec3(ambientStrength) * ao;
+    vec3 diffuse = albedo * lightColor * NdotL * shadow;
     vec3 spec = vec3(0.0);
-    if (NdotL > 0.0 && shadow > 0.0) {
-        vec3 F0 = mix(vec3(0.04), albedo, metallic);
-        spec = specularCookTorrance(N, V, L, F0, roughness) * lightColor * shadow;
+
+#if ENABLE_SPECULAR == 1
+    if (NdotL > 0.0 && shadow > 0.0 && specularStrength > 0.0) {
+        vec3 H = normalize(L + V);
+        float NdotH = max(dot(N, H), 0.0);
+        float f = 1.0 - NdotV;
+        float f2 = f * f;
+        float fresnel = f2 * f2 * f;
+        float gloss = mix(24.0, 8.0, clamp01(materialRoughness));
+        float specTerm = fastPow01(NdotH, gloss) * fresnel;
+        spec = lightColor * specTerm * specularStrength * shadow;
     }
+#endif
 
-    // Sky bounce as ambient (cheap GI feel)
-    vec3 ambient = ambientHemisphere(N, worldPos) * albedo * ao;
-
-    return diffuse + spec + ambient;
+    return max(ambient + diffuse + spec, vec3(0.0));
 }
 
 // ---------------------------------------------------------------------
@@ -219,19 +219,18 @@ vec3 blockLightColor(float torchValue) {
 // Final light accumulation for a shaded surface.
 // ---------------------------------------------------------------------
 vec3 shadeSurface(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
-                  float roughness, float metallic, float ao,
+                  float materialRoughness, float metallic, float ao,
                   float torchLight, float skyLight,
                   int matId) {
-    vec3 direct = computeDirectLighting(albedo, N, V, worldPos, roughness, metallic, ao);
+    float surfaceRoughness = clamp01(materialRoughness * roughness);
+    vec3 direct = computeDirectLighting(albedo, N, V, worldPos, surfaceRoughness, metallic, ao);
 
-    // Block light with mild quadratic-ish falloff simulated by skyLight
-    float torch01 = torchLight;
-    vec3 blockLight = blockLightColor(torch01) * albedo;
+    float torch01 = clamp01(torchLight);
+    vec3 blockLight = blockLightColor(torch01) * albedo * (1.0 + torch01 * 1.5);
 
-    // Sky light: user-provided skyLight value drives ambient intensity
-    vec3 skyFill = getSkyColor(upPosition) * skyLight * ambientLevel() * 0.6 * albedo * ao;
+    vec3 skyFill = getSkyColor(upPosition) * clamp01(skyLight) * ambientStrength * 0.75 * albedo * ao;
 
-    vec3 color = direct + blockLight + skyFill;
+    vec3 color = max(direct + blockLight + skyFill, vec3(0.0));
 
     // Foliage gets a touch of SSS for that "translucent leaves" look
     if (matId == MAT_LEAVES || matId == MAT_GRASS || matId == MAT_FOLIAGE) {

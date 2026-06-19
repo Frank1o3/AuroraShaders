@@ -1,6 +1,6 @@
 // =====================================================================
 // Aurora Shaders - shadows.glsl
-// Soft, dynamic shadow sampling using PCF + dithered rotation.
+// Stable soft shadow sampling using 4-8 tap PCF.
 // Tuned for stable, low-cost soft shadows at the configured shadow map
 // resolution (see shadowMapResolution in settings.glsl).
 // =====================================================================
@@ -20,30 +20,11 @@ vec3 toShadowClipSpace(vec3 worldPos) {
 }
 
 // ---------------------------------------------------------------------
-// Soft shadow: rotated-disk PCF.
+// Soft shadow: fixed-disk PCF.
 // Sample count is driven by qualityLevel via SHADOW_SAMPLES.
-// Uses interleaved gradient noise to rotate the kernel per pixel;
-// after temporal accumulation this yields a high-quality filter at
-// very low per-frame cost.
 // ---------------------------------------------------------------------
 
-#if SHADOW_SAMPLES >= 12
-  // 12-tap disk (Poisson-ish)
-  const vec2 diskSamples12[12] = vec2[12](
-      vec2( 0.3063, -0.2389),
-      vec2(-0.3063,  0.2389),
-      vec2( 0.7071,  0.7071),
-      vec2(-0.7071, -0.7071),
-      vec2( 0.1768,  0.9239),
-      vec2(-0.1768, -0.9239),
-      vec2( 0.9239, -0.1768),
-      vec2(-0.9239,  0.1768),
-      vec2( 0.3827,  0.9239),
-      vec2(-0.3827, -0.9239),
-      vec2( 0.9239,  0.3827),
-      vec2(-0.9239, -0.3827)
-  );
-#elif SHADOW_SAMPLES >= 8
+#if SHADOW_SAMPLES >= 8
   const vec2 diskSamples8[8] = vec2[8](
       vec2( 0.3063, -0.2389),
       vec2(-0.3063,  0.2389),
@@ -55,9 +36,6 @@ vec3 toShadowClipSpace(vec3 worldPos) {
       vec2(-0.9239,  0.1768)
   );
 #else
-  // 4-tap: uses textureGather (GL 4.0+) to fetch 4 texels in one call.
-  // This is 4× faster than 4 individual texture() calls on most GPUs.
-  // textureGather returns (bl, br, tr, tl) of the RED channel.
   const vec2 diskSamples4[4] = vec2[4](
       vec2( 0.5,  0.5),
       vec2(-0.5,  0.5),
@@ -74,30 +52,18 @@ float sampleShadowSoft(vec3 shadowUV, float normalBias, float spread) {
     if (any(lessThan(shadowUV.xy, vec2(0.0))) ||
         any(greaterThan(shadowUV.xy, vec2(1.0)))) return 1.0;
 
-    float ig = interleavedGradientNoise(gl_FragCoord.xy);
-    float theta = ig * TAU;
-    float s = sin(theta), c = cos(theta);
-    mat2 rot = mat2(c, -s, s, c);
-
     float shadow = 0.0;
 
-#if SHADOW_SAMPLES >= 12
-    for (int i = 0; i < 12; i++) {
-        vec2 offset = (rot * diskSamples12[i]) * spread;
-        float mapDepth = texture(shadowtex0, shadowUV.xy + offset).r;
-        shadow += (receiver - 0.0008 <= mapDepth) ? 1.0 : 0.0;
-    }
-    return shadow * (1.0 / 12.0);
-#elif SHADOW_SAMPLES >= 8
+#if SHADOW_SAMPLES >= 8
     for (int i = 0; i < 8; i++) {
-        vec2 offset = (rot * diskSamples8[i]) * spread;
+        vec2 offset = diskSamples8[i] * spread;
         float mapDepth = texture(shadowtex0, shadowUV.xy + offset).r;
         shadow += (receiver - 0.0008 <= mapDepth) ? 1.0 : 0.0;
     }
     return shadow * (1.0 / 8.0);
 #else
     for (int i = 0; i < 4; i++) {
-        vec2 offset = (rot * diskSamples4[i]) * spread;
+        vec2 offset = diskSamples4[i] * spread;
         float mapDepth = texture(shadowtex0, shadowUV.xy + offset).r;
         shadow += (receiver - 0.0008 <= mapDepth) ? 1.0 : 0.0;
     }
@@ -122,7 +88,7 @@ float getShadowFactor(vec3 worldPos, vec3 worldNormal) {
 
     // Spread scales with how far we are from the shadow map centre to
     // keep edges crisp near the player and softer at the fringes.
-    float spread = SHADOW_PCF_SIZE / shadowMapResolution;
+    float spread = shadowSoftness / shadowMapResolution;
     spread *= mix(0.7, 1.4, 1.0 - clamp01(length(shadowUV.xy - 0.5) * 2.0));
 
     return sampleShadowSoft(shadowUV, normalBias, spread);

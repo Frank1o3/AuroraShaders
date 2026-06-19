@@ -25,13 +25,45 @@
 #define bloomThreshold 1.2 // [0.5 0.8 1.0 1.2 1.5 2.0 2.5 3.0] Bloom threshold
 #endif
 
+#ifndef ambientStrength
+#define ambientStrength 0.20 // [0.05 0.10 0.15 0.20 0.25 0.30 0.40 0.50] Ambient light strength
+#endif
+
+#ifndef specularStrength
+#define specularStrength 0.35 // [0.0 0.1 0.2 0.35 0.5 0.75 1.0] Specular strength
+#endif
+
+#ifndef roughness
+#define roughness 0.65 // [0.10 0.20 0.35 0.50 0.65 0.80 0.95] Global roughness scale
+#endif
+
+#ifndef sunSize
+#define sunSize 1.0 // [0.5 0.75 1.0 1.25 1.5 2.0] Sun disc size
+#endif
+
+#ifndef moonIntensity
+#define moonIntensity 0.35 // [0.0 0.1 0.2 0.35 0.5 0.75 1.0] Moon intensity
+#endif
+
+#ifndef fogHeightFalloff
+#define fogHeightFalloff 0.010 // [0.000 0.002 0.005 0.010 0.020 0.035 0.050] Height fog falloff
+#endif
+
+#ifndef shadowSoftness
+#define shadowSoftness 1.5 // [0.5 1.0 1.5 2.0 2.5 3.0 4.0] Shadow softness
+#endif
+
+#ifndef cloudSpeed
+#define cloudSpeed 0.35 // [0.0 0.1 0.2 0.35 0.5 0.75 1.0] Cloud movement speed
+#endif
+
+#ifndef cloudDensity
+#define cloudDensity 0.45 // [0.0 0.15 0.30 0.45 0.60 0.75 0.90] Cloud coverage
+#endif
+
 // ---------- Shadow ----------
 #ifndef SHADOW_MAP_BIAS
 #define SHADOW_MAP_BIAS 0.85 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0] Shadow map bias
-#endif
-
-#ifndef SHADOW_PCF_SIZE
-#define SHADOW_PCF_SIZE 1.5 // [0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0] Shadow PCF size
 #endif
 
 // ---------- SSAO ----------
@@ -100,6 +132,18 @@
   #define ENABLE_SSAO 1
 #else
   #define ENABLE_SSAO 0
+#endif
+
+#if qualityLevel >= 1
+  #define ENABLE_CLOUDS 1
+#else
+  #define ENABLE_CLOUDS 0
+#endif
+
+#if qualityLevel >= 1
+  #define ENABLE_SPECULAR 1
+#else
+  #define ENABLE_SPECULAR 0
 #endif
 
 #if qualityLevel >= 2

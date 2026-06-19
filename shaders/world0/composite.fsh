@@ -8,6 +8,7 @@
 #include "../lib/lighting.glsl"
 #include "../lib/ssao.glsl"
 #include "../lib/fog.glsl"
+#include "../lib/clouds.glsl"
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec4 outSSAO;
@@ -30,6 +31,7 @@ void main() {
         vec3 viewDir = normalize(reconstructViewPos(uv, 1.0));
         vec3 sky = getSkyColor(viewDir);
 
+        sky = applyProceduralClouds(sky, viewDir);
         sky += getSunSkyAdd(viewDir);
         sky += getMoonSkyAdd(viewDir);
         sky += getStarField(viewDir);
@@ -60,7 +62,7 @@ void main() {
     // Lightmap coords are now normalized to 0-1 (done in vertex shader)
     float torchLight = matSample.r;  // block light (torches, glowstone)
     float skyLight   = matSample.g;  // sky light (already encodes day/night)
-    float roughness  = matSample.b;
+    float materialRoughness  = matSample.b;
     float emissive   = matSample.a;
 
     vec3 viewPos = reconstructViewPos(uv, depth);
@@ -73,7 +75,7 @@ void main() {
     float ao = 1.0 - occlusion * 0.5;
 
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
-    vec3 lit = shadeSurface(albedo, Nworld, V, worldPos, roughness, metallic, ao, torchLight, skyLight, matId);
+    vec3 lit = shadeSurface(albedo, Nworld, V, worldPos, materialRoughness, metallic, ao, torchLight, skyLight, matId);
     lit *= aoMult;
 
     // Emissive materials (lava, glowstone, custom emissive blocks)

@@ -2,7 +2,7 @@
 // =====================================================================
 // Aurora Shaders - gbuffers_terrain.fsh
 // Fills the G-buffer with albedo, normal, material id, lightmap,
-// and a roughness/metallic approximation per block.
+// and a materialRoughness/metallic approximation per block.
 // =====================================================================
 
 #include "../lib/common.glsl"
@@ -26,11 +26,11 @@ layout(binding = 2) uniform sampler2D gnormals;
 layout(binding = 3) uniform sampler2D gspecular;
 
 // ---------------------------------------------------------------------
-// Map block IDs to (roughness, metallic, emissive) without textures.
+// Map block IDs to (materialRoughness, metallic, emissive) without textures.
 // Cheap, stable, and works for any resource pack.
 // ---------------------------------------------------------------------
 vec3 getMaterialForBlock(float blockId) {
-    // returns vec3(roughness, metallic, emissiveStrength)
+    // returns vec3(materialRoughness, metallic, emissiveStrength)
     if (blockId == MAT_WATER)     return vec3(0.02, 0.0, 0.0);
     if (blockId == MAT_LAVA)      return vec3(0.50, 0.0, 1.5);
     if (blockId == MAT_LEAVES)    return vec3(0.85, 0.0, 0.0);
@@ -68,14 +68,14 @@ void main() {
 
     // Material params
     vec3 matData = getMaterialForBlock(v_BlockId);
-    float roughness = matData.x;
+    float materialRoughness = matData.x;
     float metallic  = matData.y;
     float emissive  = matData.z;
 
     // Try sampling lab-pbr specular map (R=smoothness, G=emissive, B=porosity, A=metalness)
     vec4 specSample = texture(gspecular, v_TexCoord);
     if (length(specSample) > 0.01) {
-        roughness = 1.0 - specSample.r;
+        materialRoughness = 1.0 - specSample.r;
         metallic  = specSample.a;
         emissive  = specSample.g * 2.0;
     }
@@ -83,13 +83,13 @@ void main() {
     // Encode N to 0..1
     vec3 normalEnc = N * 0.5 + 0.5;
 
-    // Pack lightmap + roughness into colortex2
+    // Pack lightmap + materialRoughness into colortex2
     vec2 lm = v_LightCoord;
 
     // Outputs
     outAlbedo   = vec4(albedo, 1.0);
     outNormal   = vec4(normalEnc, v_BlockId / 255.0);
-    outMaterial = vec4(lm, roughness, emissive);
+    outMaterial = vec4(lm, materialRoughness, emissive);
 
     // For water, alpha tells composite pass to skip writing depth & do refraction
     if (v_BlockId == MAT_WATER) {
