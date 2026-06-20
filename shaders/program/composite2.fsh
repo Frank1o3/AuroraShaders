@@ -22,14 +22,19 @@ const float weights[5] = float[5](
 float luminanceSample(vec2 uv, float weight) {
     vec3 c = texture(colortex0, uv).rgb;
     float d = texture(depthtex0, uv).r;
-    bool isSky = d >= 1.0;
-    float lum = luminance(c);
+    bool isSky = d >= 0.9999;
+    
+    // Assign a neutral, time-of-day mapped sky luminance value.
+    // Completely eliminates exposure reaction to direct sun/moon/sky views.
+    float lum = isSky ? mix(0.04, 0.35, daylightFactor()) : luminance(c);
 
-    // Hot pixels should bloom, not drive eye adaptation. Compress each
-    // probe before averaging so looking at the sun/torch keeps exposure stable.
-    lum = min(lum, isSky ? 1.0 : 1.4);
-    float skyWeight = isSky ? 0.05 : 1.0;
-    return lum * weight * skyWeight;
+    // Clamp terrain luminance to prevent bright spots (like cave openings)
+    // from crushing visibility in adjacent dark zones.
+    if (!isSky) {
+        lum = min(lum, 0.70);
+    }
+    
+    return lum * weight;
 }
 
 float stableSceneLuminance() {

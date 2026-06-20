@@ -71,8 +71,13 @@ void main() {
     float aoMult = aoToMultiplier(occlusion);
     float ao = 1.0 - occlusion * 0.5;
 
+    // Precalculate uniform-based lighting values once per fragment
+    float day = horizonDayFactor();
+    vec3 activeLight = getActiveLightColor();
+    vec3 skyAmbient = getSkyAmbientColor(day);
+
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
-    vec3 lit = shadeSurface(albedo, Nview, V, worldPos, materialRoughness, metallic, ao, torchLight, skyLight, matId);
+    vec3 lit = shadeSurface(albedo, Nview, V, worldPos, materialRoughness, metallic, ao, torchLight, skyLight, matId, day, activeLight, skyAmbient);
     lit *= mix(1.0, aoMult, 0.45);
 
     // Emissive materials (lava, glowstone, custom emissive blocks)

@@ -133,7 +133,9 @@ vec3 sRGBToLinear(vec3 c) {
 // sunAngle: 0 = midnight, 0.25 = sunrise, 0.5 = noon, 0.75 = sunset
 // ---------------------------------------------------------------------
 float daylightFactor() {
-    return clamp01(sin(sunAngle * PI));
+    vec3 sunDir = normalize(sunPosition);
+    vec3 upDir = normalize(upPosition);
+    return smoothstep(-0.15, 0.15, dot(sunDir, upDir));
 }
 
 float moonlightFactor() {

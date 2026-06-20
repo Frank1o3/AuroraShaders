@@ -27,8 +27,7 @@ vec3 reconstructViewPos(vec2 uv, float depth) {
     return view.xyz / view.w;
 }
 
-vec3 reconstructScenePos(vec2 uv, float depth) {
-    vec3 viewPos = reconstructViewPos(uv, depth);
+vec3 reconstructScenePos(vec3 viewPos) {
     return (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
 }
 
@@ -75,7 +74,7 @@ void main() {
 
     // Reconstruct positions
     vec3 viewPos  = reconstructViewPos(uv, depth);
-    vec3 worldPos = reconstructScenePos(uv, depth);
+    vec3 worldPos = reconstructScenePos(viewPos);
     vec3 V = normalize(-viewPos);
 
     // SSAO
@@ -83,11 +82,17 @@ void main() {
     float aoMult = aoToMultiplier(occlusion);
     float ao = 1.0 - occlusion * 0.5;
 
+    // Precalculate uniform-based lighting values once per fragment
+    float day = horizonDayFactor();
+    vec3 activeLight = getActiveLightColor();
+    vec3 skyAmbient = getSkyAmbientColor(day);
+
     // Lighting
     float metallic = (matId == MAT_METAL) ? 1.0 : 0.0;
     vec3 lit = shadeSurface(albedo, Nview, V, worldPos,
                             materialRoughness, metallic, ao,
-                            torchLight, skyLight, matId);
+                            torchLight, skyLight, matId,
+                            day, activeLight, skyAmbient);
 
     // Keep AO local so skylight remains the dominant outdoor illumination.
     lit *= mix(1.0, aoMult, 0.45);

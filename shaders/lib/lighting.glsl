@@ -114,43 +114,55 @@ vec3 getActiveLightColor() {
 
 vec3 getSkyAmbientColor(float day) {
     vec3 dayAmbient = vec3(0.58, 0.68, 0.82) * sunIntensity;
-    vec3 nightAmbient = vec3(0.060, 0.075, 0.120) * (0.75 + moonIntensity);
+    // Boost night ambient color to increase night terrain readability
+    vec3 nightAmbient = vec3(0.090, 0.115, 0.180) * (0.80 + moonIntensity * 1.5);
     return mix(nightAmbient, dayAmbient, day);
 }
 
 // ---------------------------------------------------------------------
 // Atmospheric sky contribution as an ambient fill (Hemispheric)
 // ---------------------------------------------------------------------
-vec3 ambientHemisphere(vec3 N, float skyLight, float ao, float day) {
+vec3 ambientHemisphere(vec3 N, float skyLight, float ao, vec3 skyAmbientColor, float day) {
     vec3 upDir = normalize(upPosition);
     float upDot = dot(N, upDir) * 0.5 + 0.5;
+
+    // Proper Ambient Occlusion term applied smoothly to ambient light
+    float aoTerm = mix(0.25, 1.0, clamp01(ao));
+    
+    // Sky light visibility mapping: skyLight is normalized 0-1
     float skyVis = clamp01(skyLight);
+    // Non-linear mapping for natural sky light falloff
+    float skyAccess = mix(0.25, 1.0, skyVis * skyVis);
 
-    vec3 sky = getSkyAmbientColor(day);
-    vec3 ground = mix(vec3(0.038, 0.040, 0.052), vec3(0.24, 0.22, 0.18), day);
-    float skyAccess = mix(0.34, 1.0, skyVis);
-    float hemi = mix(0.82, 1.14, clamp01(upDot));
-    float aoTerm = mix(1.0, clamp01(ao), 0.55);
+    // Boost night ground base color (from 0.038... to 0.05...)
+    vec3 ground = mix(vec3(0.050, 0.055, 0.070), vec3(0.24, 0.22, 0.18), day);
+    vec3 hemiColor = mix(ground, skyAmbientColor, upDot);
 
-    vec3 ambient = mix(ground, sky, 0.78) * skyAccess * hemi;
-    return max(ambient * max(ambientStrength, 0.18) * aoTerm, vec3(0.0));
+    // Boost ambient by a healthy factor to make it the primary outdoor light source.
+    // Scales ambient strength to target ~70-85% perceived outdoor brightness at default settings.
+    float strength = max(ambientStrength, 0.05) * 3.5;
+
+    return hemiColor * (skyAccess * aoTerm * strength);
 }
 
 // ---------------------------------------------------------------------
 // Full direct lighting (sun/moon) with shadow + soft fill.
 // ---------------------------------------------------------------------
 vec3 computeDirectLighting(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
-                           float materialRoughness, float metallic, float ao) {
+                           float materialRoughness, float metallic, float ao,
+                           vec3 activeLightColor) {
     N = normalize(N);
     V = normalize(V);
     vec3 L = normalize(shadowLightPosition);
     float NdotL = clamp01(dot(N, L));
     float NdotV = clamp01(dot(N, V));
     float shadow = getShadowFactor(worldPos, N);
-    vec3 lightColor = getActiveLightColor();
 
     float sunShape = NdotL * shadow;
-    vec3 diffuse = albedo * lightColor * sunShape * 0.26;
+    
+    // Scale direct sunlight down (from 0.26 to 0.10) to keep it additive
+    // on top of a strong ambient base (15-30% direct sunlight contribution).
+    vec3 diffuse = albedo * activeLightColor * sunShape * 0.10;
     vec3 spec = vec3(0.0);
 
 #if ENABLE_SPECULAR == 1
@@ -160,7 +172,7 @@ vec3 computeDirectLighting(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
         float fresnel = fastPow01(1.0 - NdotV, 5.0);
         float gloss = mix(32.0, 8.0, clamp01(materialRoughness));
         float specTerm = fastPow01(NdotH, gloss) * (0.04 + fresnel);
-        spec = lightColor * specTerm * specularStrength * shadow * (1.0 - materialRoughness * 0.45) * 0.55;
+        spec = activeLightColor * specTerm * specularStrength * shadow * (1.0 - materialRoughness * 0.45) * 0.55;
     }
 #endif
 
@@ -168,25 +180,12 @@ vec3 computeDirectLighting(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
 }
 
 // ---------------------------------------------------------------------
-// Subsurface scattering approximation for leaves/grass/foliage.
-// Cheap: backlight when sun behind surface.
-// ---------------------------------------------------------------------
-vec3 subsurfaceFoliage(vec3 albedo, vec3 N, vec3 V, vec3 worldPos) {
-    vec3 L = normalize(shadowLightPosition);
-    float backLight = clamp01(dot(-N, L));
-    float thickness = 0.5; // assumed
-    vec3 sss = albedo * vec3(1.0, 0.6, 0.3) * backLight * thickness * 0.4;
-    return sss * horizonDayFactor();
-}
-
-// ---------------------------------------------------------------------
 // Block-light (from lightmap, e.g. torches) - warm point light tint
 // ---------------------------------------------------------------------
 vec3 blockLightColor(float torchValue) {
-    // torchValue in 0..1
-    vec3 warm = vec3(1.00, 0.65, 0.30);
-    vec3 base = vec3(0.18, 0.14, 0.10); // residual glow
-    return mix(base, warm, torchValue) * torchValue;
+    vec3 warm = vec3(1.00, 0.62, 0.28); // warmer cozy orange-yellow
+    vec3 base = vec3(0.12, 0.08, 0.06); // lower base glow for nicer contrast
+    return mix(base, warm, torchValue);
 }
 
 // ---------------------------------------------------------------------
@@ -195,24 +194,32 @@ vec3 blockLightColor(float torchValue) {
 vec3 shadeSurface(vec3 albedo, vec3 N, vec3 V, vec3 worldPos,
                   float materialRoughness, float metallic, float ao,
                   float torchLight, float skyLight,
-                  int matId) {
+                  int matId, float day, vec3 activeLightColor, vec3 skyAmbientColor) {
     float surfaceRoughness = clamp01(materialRoughness * roughness);
-    vec3 direct = computeDirectLighting(albedo, N, V, worldPos, surfaceRoughness, metallic, ao);
+    vec3 direct = computeDirectLighting(albedo, N, V, worldPos, surfaceRoughness, metallic, ao, activeLightColor);
 
     float torch01 = clamp01(torchLight);
-    vec3 blockLight = blockLightColor(torch01) * albedo * (0.65 + torch01 * 2.0);
+    // Smooth quadratic curve boost for torch light: spreads further and has a warm cozy glow
+    float torchGlow = torch01 * (1.0 + torch01 * 2.5);
+    vec3 blockLight = blockLightColor(torch01) * albedo * torchGlow * 1.5;
 
-    float day = horizonDayFactor();
     float sky01 = clamp01(skyLight);
-    vec3 ambient = albedo * ambientHemisphere(N, sky01, ao, day);
-    vec3 minAmbient = mix(vec3(0.050, 0.060, 0.090), vec3(0.34, 0.38, 0.42), day);
-    ambient = max(ambient, albedo * minAmbient * (0.30 + 0.70 * sky01));
+    vec3 ambient = albedo * ambientHemisphere(N, sky01, ao, skyAmbientColor, day);
+    
+    // Lower, soft minimum ambient to act only as a backup in pitch-black areas.
+    // Increased night floor (from 0.015... to 0.04...) to prevent crushed blacks.
+    vec3 minAmbient = mix(vec3(0.040, 0.050, 0.070), vec3(0.07, 0.08, 0.10), day);
+    ambient = max(ambient, albedo * minAmbient * (0.20 + 0.80 * sky01));
 
     vec3 color = max(ambient + direct + blockLight, vec3(0.0));
 
-    // Foliage gets a touch of SSS for that "translucent leaves" look
+    // Foliage gets a touch of SSS for that "translucent leaves" look.
+    // Optimized: inlined and uses pre-calculated day factor.
     if (matId == MAT_LEAVES || matId == MAT_GRASS || matId == MAT_FOLIAGE) {
-        color += subsurfaceFoliage(albedo, N, V, worldPos);
+        vec3 L = normalize(shadowLightPosition);
+        float backLight = clamp01(dot(-N, L));
+        vec3 sss = albedo * vec3(1.0, 0.6, 0.3) * backLight * 0.20;
+        color += sss * day;
     }
 
     // Emissive blocks (lava, sea lantern, glowstone, etc.) just pass albedo through
